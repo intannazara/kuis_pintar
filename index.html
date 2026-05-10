@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edu Adventure Adaptive Gamification</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap');
+
+body{
+    margin:0;
+    font-family:'Quicksand',sans-serif;
+    background:linear-gradient(135deg,#74ebd5,#9face6);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    overflow:hidden;
+}
+
+/* BUBBLE */
+.bubble{
+    position:absolute;
+    bottom:-100px;
+    background:rgba(255,255,255,0.3);
+    border-radius:50%;
+    animation:float 10s infinite ease-in;
+    z-index:-1;
+}
+
+@keyframes float{
+    0%{
+        transform:translateY(0) rotate(0deg);
+        opacity:1;
+    }
+    100%{
+        transform:translateY(-120vh) rotate(360deg);
+        opacity:0;
+    }
+}
+
+/* CARD */
+#game-card{
+    width:90%;
+    max-width:550px;
+    background:rgba(255,255,255,0.93);
+    padding:40px;
+    border-radius:35px;
+    text-align:center;
+    box-shadow:0 20px 40px rgba(0,0,0,0.2);
+}
+
+h1{
+    font-family:'Fredoka One',cursive;
+    font-size:38px;
+    color:#2f3542;
+}
+
+.subtitle{
+    color:#555;
+    margin-bottom:20px;
+    font-size:18px;
+}
+
+/* BUTTON */
+.category-btn{
+    width:100%;
+    padding:20px;
+    border:none;
+    border-radius:25px;
+    margin:15px 0;
+    font-size:22px;
+    font-family:'Fredoka One',cursive;
+    color:white;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.ipa-btn{
+    background:#2ecc71;
+}
+
+.ips-btn{
+    background:#f39c12;
+}
+
+.category-btn:hover{
+    transform:scale(1.03);
+}
+
+/* SCORE */
+#score-tag{
+    background:#2f3542;
+    color:#f1c40f;
+    padding:10px 25px;
+    border-radius:50px;
+    display:inline-block;
+    margin-bottom:20px;
+    font-weight:bold;
+}
+
+/* QUESTION */
+#question-box{
+    font-size:24px;
+    font-weight:bold;
+    color:#2f3542;
+    margin:25px 0;
+}
+
+/* OPTION */
+.option{
+    width:100%;
+    padding:18px;
+    margin:10px 0;
+    border:none;
+    border-radius:18px;
+    background:white;
+    font-size:18px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.2s;
+}
+
+.option:hover{
+    transform:translateX(8px);
+    background:#ecf0f1;
+}
+
+#feedback-msg{
+    margin-top:20px;
+    font-size:22px;
+    font-family:'Fredoka One',cursive;
+}
+</style>
+</head>
+
+<body>
+
+<!-- MUSIK OTOMATIS -->
+<iframe 
+src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&loop=1&playlist=jfKfPfyJRdk"
+allow="autoplay"
+style="display:none">
+</iframe>
+
+<div id="bg-bubbles"></div>
+
+<div id="game-card">
+
+<!-- MENU -->
+<div id="main-menu">
+
+<h1>🚀 Kuis Pintar</h1>
+
+<div class="subtitle">
+Belajar IPA & IPS Jadi Lebih Seru ✨
+</div>
+
+<button class="category-btn ipa-btn" onclick="start('IPA')">
+🌿 DUNIA IPA
+</button>
+
+<button class="category-btn ips-btn" onclick="start('IPS')">
+🌍 DUNIA IPS
+</button>
+
+</div>
+
+<!-- QUIZ -->
+<div id="quiz-area" style="display:none;">
+
+<div id="score-tag">
+⭐ SKOR:
+<span id="val-score">0</span>
+|
+🎯 LEVEL:
+<span id="level-val">1</span>
+</div>
+
+<div id="question-box"></div>
+
+<div id="options-list"></div>
+
+<div id="feedback-msg"></div>
+
+</div>
+
+</div>
+
+<script>
+
+/* SOUND EFFECT */
+const winSfx = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3");
+
+const loseSfx = new Audio("https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3");
+
+const clickSfx = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
+
+/* DATABASE */
+const db = {
+
+'IPA':[
+
+{q:"Apa pusat tata surya kita?",a:["Bumi","Bulan","Matahari","Bintang"],c:2},
+
+{q:"Bagian paru-paru berfungsi untuk...",a:["Mencerna","Bernapas","Memompa","Berpikir"],c:1},
+
+{q:"Air mendidih pada suhu...",a:["50°C","80°C","100°C","200°C"],c:2},
+
+{q:"Hewan pemakan tumbuhan disebut...",a:["Herbivora","Karnivora","Omnivora","Insektivora"],c:0},
+
+{q:"Planet terdekat dari matahari adalah...",a:["Mars","Merkurius","Venus","Bumi"],c:1},
+
+{q:"Akar tumbuhan berfungsi untuk...",a:["Melihat","Menyerap air","Terbang","Bernafas"],c:1},
+
+{q:"Perubahan air menjadi es disebut...",a:["Menguap","Mencair","Membeku","Menyublim"],c:2},
+
+{q:"Contoh hewan ovipar adalah...",a:["Kucing","Ayam","Sapi","Kambing"],c:1},
+
+{q:"Energi dari matahari disebut...",a:["Kimia","Gerak","Panas","Surya"],c:3},
+
+{q:"Ulat akan berubah menjadi...",a:["Katak","Burung","Kupu-kupu","Semut"],c:2}
+
+],
+
+'IPS':[
+
+{q:"Warna bendera Indonesia adalah...",a:["Merah Putih","Merah Hijau","Biru Putih","Kuning Putih"],c:0},
+
+{q:"Indonesia merdeka tahun...",a:["1942","1945","1950","1965"],c:1},
+
+{q:"Ibu kota Indonesia saat ini...",a:["Bandung","Surabaya","Jakarta","Medan"],c:2},
+
+{q:"Presiden RI ke-7 adalah...",a:["SBY","Jokowi","Habibie","Prabowo"],c:1},
+
+{q:"Candi Borobudur berada di...",a:["Jawa Tengah","Jawa Timur","Bali","Papua"],c:0},
+
+{q:"Lagu kebangsaan Indonesia adalah...",a:["Garuda Pancasila","Indonesia Raya","Hari Merdeka","Halo-Halo Bandung"],c:1},
+
+{q:"Pahlawan emansipasi wanita adalah...",a:["Cut Nyak Dien","Kartini","Dewi Sartika","Fatmawati"],c:1},
+
+{q:"Pulau terbesar di Indonesia adalah...",a:["Jawa","Bali","Papua","Sumatra"],c:2},
+
+{q:"Semboyan negara Indonesia adalah...",a:["Tut Wuri Handayani","Bhinneka Tunggal Ika","Merdeka","Pancasila"],c:1},
+
+{q:"Alat musik Sasando berasal dari...",a:["Papua","NTT","Aceh","Jawa"],c:1}
+
+]
+
+};
+
+let score = 0;
+let index = 0;
+let level = 1;
+let streak = 0;
+let activePool = [];
+
+/* START */
+function start(mapel){
+
+clickSfx.play();
+
+score = 0;
+index = 0;
+level = 1;
+streak = 0;
+
+activePool = [...db[mapel]]
+.sort(() => Math.random() - 0.5);
+
+document.getElementById("main-menu").style.display = "none";
+
+document.getElementById("quiz-area").style.display = "block";
+
+show();
+
+}
+
+/* SHOW */
+function show(){
+
+if(index >= activePool.length){
+return finish();
+}
+
+const data = activePool[index];
+
+document.getElementById("question-box").innerText = data.q;
+
+document.getElementById("val-score").innerText = score;
+
+document.getElementById("level-val").innerText = level;
+
+document.getElementById("feedback-msg").innerHTML = "";
+
+const list = document.getElementById("options-list");
+
+list.innerHTML = "";
+
+data.a.forEach((opt,i)=>{
+
+const btn = document.createElement("button");
+
+btn.className = "option";
+
+btn.innerText = opt;
+
+btn.onclick = () => check(i,data.c);
+
+list.appendChild(btn);
+
+});
+
+}
+
+/* CHECK */
+function check(pick,correct){
+
+const btns = document.querySelectorAll(".option");
+
+btns.forEach(btn => btn.onclick = null);
+
+if(pick === correct){
+
+winSfx.play();
+
+score += 10;
+
+streak++;
+
+document.getElementById("feedback-msg").innerHTML =
+"✨ BENAR! HEBAT!";
+
+if(streak >= 2){
+
+level++;
+
+streak = 0;
+
+}
+
+}else{
+
+loseSfx.play();
+
+streak = 0;
+
+document.getElementById("feedback-msg").innerHTML =
+"💪 JANGAN MENYERAH!";
+
+}
+
+index++;
+
+setTimeout(show,1500);
+
+}
+
+/* FINISH */
+function finish(){
+
+document.getElementById("game-card").innerHTML = `
+
+<h1>🎉 SELESAI!</h1>
+
+<p style="font-size:28px;">
+Skor Kamu: <b>${score}/100</b>
+</p>
+
+<p style="font-size:22px;">
+🎯 Level: ${level}
+</p>
+
+<button class="category-btn ipa-btn"
+onclick="location.reload()">
+🔄 MAIN LAGI
+</button>
+
+`;
+
+}
+
+/* BUBBLE */
+function createBubbles(){
+
+const container = document.getElementById("bg-bubbles");
+
+for(let i=0;i<20;i++){
+
+const b = document.createElement("div");
+
+b.className = "bubble";
+
+const size = Math.random()*70 + 20 + "px";
+
+b.style.width = size;
+b.style.height = size;
+
+b.style.left = Math.random()*100 + "vw";
+
+b.style.animationDelay =
+Math.random()*5 + "s";
+
+container.appendChild(b);
+
+}
+
+}
+
+createBubbles();
+
+</script>
+
+</body>
+</html>
